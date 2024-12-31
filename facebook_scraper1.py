@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+from datetime import datetime, timedelta
 
 # Cấu hình trình duyệt Chrome để sử dụng profile người dùng đã đăng nhập
 options = webdriver.ChromeOptions()
@@ -21,51 +22,57 @@ service = Service(chromedriver_path)
 driver = webdriver.Chrome(service=service, options=options)
 
 try:
-    # Mở trang nhóm trên Facebook (thay group_url bằng URL của nhóm bạn muốn truy cập)
+    # Mở trang nhóm trên Facebook
     group_url = "https://www.facebook.com/groups/620662156508971"
     driver.get(group_url)
-    time.sleep(10)  # Chờ trang tải xong
+    time.sleep(5)  # Chờ trang tải xong
 
     # Tìm và nhấn nút "Tìm kiếm"
     try:
-        search_button = WebDriverWait(driver, 20).until(
+        search_button = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//div[@aria-label='Tìm kiếm']"))
         )
         search_button.click()  # Nhấp vào nút "Tìm kiếm"
-        time.sleep(5)  # Chờ giao diện tải xong
+        time.sleep(3)  # Chờ giao diện tải xong
     except Exception as e:
         print("Không tìm thấy nút tìm kiếm:", e)
 
     # Nhập từ khóa và tìm kiếm nếu thanh tìm kiếm xuất hiện
     try:
-        search_box = WebDriverWait(driver, 20).until(
+        search_box = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//input[@aria-label='Tìm kiếm trong nhóm này']"))
         )
         search_box.send_keys("visa")
         search_box.send_keys(Keys.RETURN)  # Nhấn Enter để tìm kiếm
-        time.sleep(10)  # Chờ kết quả tải xong
+        time.sleep(5)  # Chờ kết quả tải xong
     except Exception as e:
         print("Không tìm thấy ô nhập từ khóa:", e)
 
     # Nhấn vào bộ lọc "Gần đây nhất"
     try:
-        filter_switch = WebDriverWait(driver, 20).until(
+        filter_switch = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//input[@aria-label='Gần đây nhất']"))
         )
-        if not filter_switch.is_selected():
+        # Chỉ nhấp nếu công tắc chưa được bật
+        if filter_switch.get_attribute("aria-checked") == "false":
             filter_switch.click()  # Bật công tắc "Gần đây nhất"
-        time.sleep(10)  # Chờ kết quả cập nhật theo bộ lọc
+        time.sleep(5)  # Chờ kết quả cập nhật theo bộ lọc
     except Exception as e:
         print("Không tìm thấy nút bộ lọc 'Gần đây nhất':", e)
 
-    # Tùy chọn: Lấy danh sách các bài viết kết quả và in ra màn hình
+    # Lấy danh sách các bài viết và lọc bài đăng trong 24 giờ qua
     try:
         posts = driver.find_elements(By.XPATH, "//div[@role='article']")
+        print(f"Tổng số bài viết tìm thấy: {len(posts)}")
         for post in posts:
-            print(post.text)  # In nội dung bài viết
-            print("-" * 80)  # Phân cách giữa các bài viết
+            try:
+                post_text = post.text
+                print("Bài viết được tìm thấy:\n", post_text)
+                print("-" * 80)
+            except Exception as e:
+                print("Không thể lấy nội dung bài viết:", e)
     except Exception as e:
-        print("Không tìm thấy bài viết nào:", e)
+        print("Không tìm thấy bài viết nào hoặc xảy ra lỗi:", e)
 
 finally:
     # Đóng trình duyệt sau khi thực hiện xong
